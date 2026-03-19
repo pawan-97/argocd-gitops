@@ -1,26 +1,28 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: cronjob-first
+  name: manual-cronjob
   namespace: cron-jobs
+  annotations:
+    description: "On-demand CronJob triggered manually via ArgoCD UI"
 spec:
-  schedule: "*/5 * * * *"
+  schedule: "0 0 31 2 *" # Impossible schedule (Feb 31st) to ensure it never runs automatically
+  suspend: true          # Suspend it just in case
   timeZone: "Asia/Kolkata"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 1
-
   jobTemplate:
     spec:
       template:
         spec:
           containers:
-          - name: app
+          - name: manual-job
             image: busybox
             command:
               - sh
               - -c
-              - date; echo "Hello from GitOps CronJob"
+              - date; echo "Hello! This job was triggered manually from the ArgoCD UI."
             resources:
               requests:
                 cpu: "100m"
