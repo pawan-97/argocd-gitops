@@ -15,8 +15,8 @@ spec:
     namespace: cron-jobs
 
   syncPolicy:
-    automated:
-      prune: false
-      selfHeal: false
+    # automated:
+    #   prune: false
+    #   selfHeal: false
     syncOptions:
         - CreateNamespace=true
