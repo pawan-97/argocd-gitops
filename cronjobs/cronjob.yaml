@@ -78,8 +78,8 @@ spec:
               - /bin/sh
               - -c
               - date; echo "Hello from GitOps CronJob"
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "128Mi"
           restartPolicy: OnFailure
