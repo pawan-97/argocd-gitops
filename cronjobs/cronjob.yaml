@@ -1,56 +1,56 @@
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: cronjob-first
-  namespace: cron-jobs
-spec:
-  schedule: "*/5 * * * *"
-  timeZone: "Asia/Kolkata"
-  concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 3
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          containers:
-          - name: app
-            image: busybox
-            command:
-              - sh
-              - -c
-              - date; echo "Hello from GitOps CronJob"
-            resources:
-              requests:
-                cpu: "100m"
-                memory: "128Mi"
-          restartPolicy: OnFailure
----
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: cronjob-second
-  namespace: cron-jobs
-spec:
-  schedule: "*/2 * * * *"
-  timeZone: "Asia/Kolkata"
-  concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 3
+# apiVersion: batch/v1
+# kind: CronJob
+# metadata:
+#   name: cronjob-first
+#   namespace: cron-jobs
+# spec:
+#   schedule: "*/5 * * * *"
+#   timeZone: "Asia/Kolkata"
+#   concurrencyPolicy: Forbid
+#   successfulJobsHistoryLimit: 3
+#   failedJobsHistoryLimit: 3
+#   jobTemplate:
+#     spec:
+#       template:
+#         spec:
+#           containers:
+#           - name: app
+#             image: busybox
+#             command:
+#               - sh
+#               - -c
+#               - date; echo "Hello from GitOps CronJob"
+#             resources:
+#               requests:
+#                 cpu: "100m"
+#                 memory: "128Mi"
+#           restartPolicy: OnFailure
+# ---
+# apiVersion: batch/v1
+# kind: CronJob
+# metadata:
+#   name: cronjob-second
+#   namespace: cron-jobs
+# spec:
+#   schedule: "*/2 * * * *"
+#   timeZone: "Asia/Kolkata"
+#   concurrencyPolicy: Forbid
+#   successfulJobsHistoryLimit: 3
+#   failedJobsHistoryLimit: 3
 
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          containers:
-          - name: app
-            image: busybox
-            command:
-              - sh
-              - -c
-              - date; echo "Hello from GitOps CronJob"
-            resources:
-              requests:
-                cpu: "100m"
-                memory: "128Mi"
-          restartPolicy: OnFailure
+#   jobTemplate:
+#     spec:
+#       template:
+#         spec:
+#           containers:
+#           - name: app
+#             image: busybox
+#             command:
+#               - sh
+#               - -c
+#               - date; echo "Hello from GitOps CronJob"
+#             resources:
+#               requests:
+#                 cpu: "100m"
+#                 memory: "128Mi"
+#           restartPolicy: OnFailure
