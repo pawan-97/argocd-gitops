@@ -84,7 +84,7 @@ spec:
             command:
               - /bin/sh
               - -c
-              - date; echo "Hello from GitOps CronJob"
+              - date1234123; echo "Hello from GitOps CronJob"
             resources:
               requests:
                 cpu: "100m"
