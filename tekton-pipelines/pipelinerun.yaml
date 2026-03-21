@@ -1,0 +1,94 @@
+---
+# PipelineRun: bulletin-board-ci-cd
+#
+# Triggers a full CI/CD run for the bulletin-board Node.js app.
+#
+# Prerequisites before running:
+#   1. Tekton Pipelines installed:
+#        kubectl apply -f https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+#
+#   2. Docker Hub credentials secret:
+#        kubectl create secret docker-registry docker-registry-creds \
+#          --docker-server=https://index.docker.io/v1/ \
+#          --docker-username=<your-username> \
+#          --docker-password=<your-password-or-token> \
+#          -n tekton-jobs
+#
+#        kubectl create secret generic docker-config-secret \
+#          --from-file=config.json=$HOME/.docker/config.json \
+#          -n tekton-jobs
+#
+#   3. (Optional) Slack webhook secret:
+#        kubectl create secret generic slack-webhook-secret \
+#          --from-literal=url=https://hooks.slack.com/services/XXX/YYY/ZZZ \
+#          -n tekton-jobs
+#
+#   4. Deploy target namespace:
+#        kubectl create namespace bulletin-board
+#
+# Trigger:
+#   kubectl create -f pipelinerun.yaml -n tekton-jobs
+#
+# Watch logs:
+#   tkn pipelinerun logs --last -f -n tekton-jobs
+
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: bulletin-board-ci-cd-run-    # unique name per run (prevents collision)
+  namespace: tekton-jobs
+  labels:
+    app: bulletin-board
+    triggered-by: manual
+spec:
+  pipelineRef:
+    name: bulletin-board-ci-cd
+
+  # ----------------------------------------------------------------
+  # Override specific params for this run
+  # ----------------------------------------------------------------
+  params:
+    - name: git-url
+      value: "https://github.com/dockersamples/node-bulletin-board.git"
+    - name: git-revision
+      value: "master"
+    - name: image
+      value: "docker.io/myorg/bulletin-board"    # ← replace myorg with your Docker Hub username
+    - name: deploy-namespace
+      value: "bulletin-board"
+    - name: environment
+      value: "production"
+
+  # ----------------------------------------------------------------
+  # Workspaces
+  # ----------------------------------------------------------------
+  workspaces:
+    # Shared source — using emptyDir for demo; replace with PVC for large repos:
+    #   volumeClaimTemplate:
+    #     spec:
+    #       accessModes: ["ReadWriteOnce"]
+    #       resources:
+    #         requests:
+    #           storage: 1Gi
+    - name: shared-source
+      emptyDir: {}
+
+    # Docker credentials (config.json) for Kaniko to push to Docker Hub
+    - name: docker-config
+      secret:
+        secretName: docker-config-secret
+
+  # ----------------------------------------------------------------
+  # Resource limits for all TaskRuns spawned by this PipelineRun
+  # ----------------------------------------------------------------
+  taskRunTemplate:
+    podTemplate:
+      securityContext:
+        runAsNonRoot: false    # Kaniko requires root
+      resources:
+        limits:
+          cpu: "2"
+          memory: "2Gi"
+        requests:
+          cpu: "500m"
+          memory: "512Mi"

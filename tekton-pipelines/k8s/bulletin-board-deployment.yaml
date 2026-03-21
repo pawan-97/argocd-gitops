@@ -1,0 +1,63 @@
+---
+# Kubernetes manifests for the bulletin-board Node.js app
+# Referenced by task-deploy.yaml at path: k8s/bulletin-board-deployment.yaml
+#
+# The deploy task will replace IMAGE_PLACEHOLDER with the real image:tag at deploy time.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bulletin-board
+  namespace: bulletin-board
+  labels:
+    app: bulletin-board
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bulletin-board
+  template:
+    metadata:
+      labels:
+        app: bulletin-board
+    spec:
+      containers:
+        - name: bulletin-board
+          image: IMAGE_PLACEHOLDER     # ← replaced by task-deploy.yaml sed step
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bulletin-board
+  namespace: bulletin-board
+  labels:
+    app: bulletin-board
+spec:
+  Selector:
+    app: bulletin-board
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+  type: LoadBalancer

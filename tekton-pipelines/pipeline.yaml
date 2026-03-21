@@ -1,0 +1,178 @@
+---
+# Pipeline: bulletin-board-ci-cd
+#
+# Migrated from a Jenkins Declarative Pipeline that:
+#   1. Checked out the node-bulletin-board app from GitHub
+#   2. Ran npm install
+#   3. Ran structural tests
+#   4. Built a Docker image with Kaniko and pushed to Docker Hub
+#   5. Deployed to Kubernetes using kubectl
+#   6. Notified Slack with the result (always, pass or fail)
+#
+# App: https://github.com/dockersamples/node-bulletin-board
+# Image: docker.io/<your-org>/bulletin-board:<git-sha>
+
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: bulletin-board-ci-cd
+  namespace: tekton-jobs
+  labels:
+    app.kubernetes.io/name: bulletin-board-ci-cd
+    app: bulletin-board
+    team: platform
+spec:
+  description: >
+    Full CI/CD pipeline for the Node.js bulletin-board app.
+    Stages: clone → npm install → tests → docker build+push → k8s deploy → slack notify.
+
+  # -----------------------------------------------------------------
+  # Parameters — all have real defaults, override in PipelineRun
+  # -----------------------------------------------------------------
+  params:
+    - name: git-url
+      description: GitHub repository to clone
+      type: string
+      default: "https://github.com/dockersamples/node-bulletin-board.git"
+
+    - name: git-revision
+      description: Branch, tag, or commit SHA to build
+      type: string
+      default: "master"
+
+    - name: image
+      description: Docker image to build and push (without tag)
+      type: string
+      default: "docker.io/myorg/bulletin-board"   # ← change myorg to your Docker Hub username
+
+    - name: deploy-namespace
+      description: Kubernetes namespace to deploy the app into
+      type: string
+      default: "bulletin-board"
+
+    - name: environment
+      description: Environment label used in Slack notification
+      type: string
+      default: "production"
+
+  # -----------------------------------------------------------------
+  # Workspaces
+  # -----------------------------------------------------------------
+  workspaces:
+    - name: shared-source
+      description: Shared volume for source code between all tasks
+    - name: docker-config
+      description: Docker Hub credentials (config.json) for Kaniko push
+
+  # -----------------------------------------------------------------
+  # Results surfaced at pipeline level
+  # -----------------------------------------------------------------
+  results:
+    - name: git-commit
+      description: Exact commit SHA that was built
+      value: $(tasks.checkout.results.commit)
+    - name: image-digest
+      description: Digest of the pushed Docker image
+      value: $(tasks.docker-build-push.results.image-digest)
+    - name: test-result
+      description: Whether tests passed or failed
+      value: $(tasks.run-tests.results.test-status)
+
+  # -----------------------------------------------------------------
+  # Tasks
+  # -----------------------------------------------------------------
+  tasks:
+
+    # ── Stage 1: Checkout ──────────────────────────────────────────
+    - name: checkout
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+      workspaces:
+        - name: source
+          workspace: shared-source
+
+    # ── Stage 2: Build (npm install) ──────────────────────────────
+    - name: build
+      taskRef:
+        name: build
+      runAfter:
+        - checkout
+      workspaces:
+        - name: source
+          workspace: shared-source
+
+    # ── Stage 3: Test ─────────────────────────────────────────────
+    - name: run-tests
+      taskRef:
+        name: run-tests
+      runAfter:
+        - build
+      workspaces:
+        - name: source
+          workspace: shared-source
+
+    # ── Stage 4: Docker Build & Push ──────────────────────────────
+    # Only runs after tests pass (runAfter: run-tests)
+    - name: docker-build-push
+      taskRef:
+        name: docker-build-push
+      runAfter:
+        - run-tests
+      params:
+        - name: image
+          value: $(params.image)
+        - name: tag
+          value: $(tasks.checkout.results.commit)   # tag with git SHA — immutable & traceable
+        - name: dockerfile-path
+          value: "bulletin-board-app/Dockerfile"
+        - name: context-path
+          value: "bulletin-board-app"
+      workspaces:
+        - name: source
+          workspace: shared-source
+        - name: docker-config
+          workspace: docker-config
+
+    # ── Stage 5: Deploy ───────────────────────────────────────────
+    - name: deploy
+      taskRef:
+        name: deploy
+      runAfter:
+        - docker-build-push
+      params:
+        - name: image
+          value: $(params.image)
+        - name: image-tag
+          value: $(tasks.checkout.results.commit)   # deploy exactly what was built
+        - name: deploy-namespace
+          value: $(params.deploy-namespace)
+        - name: manifest-path
+          value: "k8s/bulletin-board-deployment.yaml"
+      workspaces:
+        - name: source
+          workspace: shared-source
+
+  # -----------------------------------------------------------------
+  # Finally — Slack Notification (always runs, pass or fail)
+  # Uses aggregate execution status to determine overall result.
+  # -----------------------------------------------------------------
+  finally:
+    - name: notify
+      taskRef:
+        name: notify
+      params:
+        - name: pipeline-status
+          value: $(tasks.status)                         # Built-in: Succeeded / Failed / Cancelled
+        - name: app-name
+          value: "bulletin-board"
+        - name: git-commit
+          value: $(tasks.checkout.results.commit)
+        - name: image-digest
+          value: $(tasks.docker-build-push.results.image-digest)
+        - name: environment
+          value: $(params.environment)

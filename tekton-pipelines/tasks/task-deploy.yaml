@@ -1,0 +1,70 @@
+---
+# Task: deploy
+# Deploys the bulletin-board app to Kubernetes by:
+#   1. Updating the image tag in the Deployment manifest using sed
+#   2. Applying the manifest with kubectl
+#   3. Waiting for rollout to complete
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: deploy
+  namespace: tekton-jobs
+  labels:
+    app.kubernetes.io/name: deploy
+spec:
+  description: >
+    Deploys the bulletin-board app to the target Kubernetes namespace.
+    Updates the image tag dynamically from the git SHA, then applies the manifest.
+  params:
+    - name: image
+      description: Full image name (without tag)
+      type: string
+      default: "docker.io/myorg/bulletin-board"
+    - name: image-tag
+      description: Image tag to deploy (typically the git SHA from git-clone result)
+      type: string
+      default: "latest"
+    - name: deploy-namespace
+      description: Target Kubernetes namespace
+      type: string
+      default: "bulletin-board"
+    - name: manifest-path
+      description: Path to the k8s manifest within the workspace
+      type: string
+      default: "k8s/bulletin-board-deployment.yaml"
+  workspaces:
+    - name: source
+      description: Source code workspace containing k8s manifests
+  steps:
+    - name: update-image-tag
+      image: alpine:3.19
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/sh
+        set -e
+        echo "=== Update image tag in manifest ==="
+        echo "Image : $(params.image):$(params.image-tag)"
+        # Replace the image placeholder in the manifest with the real tag
+        sed -i "s|IMAGE_PLACEHOLDER|$(params.image):$(params.image-tag)|g" $(params.manifest-path)
+        echo "Updated manifest:"
+        cat $(params.manifest-path)
+
+    - name: kubectl-apply
+      image: bitnami/kubectl:1.29
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/sh
+        set -e
+        echo "=== Applying manifest to namespace: $(params.deploy-namespace) ==="
+        kubectl apply -f $(params.manifest-path) -n $(params.deploy-namespace)
+
+    - name: rollout-status
+      image: bitnami/kubectl:1.29
+      script: |
+        #!/bin/sh
+        set -e
+        echo "=== Waiting for rollout to finish ==="
+        kubectl rollout status deployment/bulletin-board \
+          -n $(params.deploy-namespace) \
+          --timeout=3m
+        echo "✔ Rollout complete!"
