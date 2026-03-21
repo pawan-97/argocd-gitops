@@ -72,7 +72,7 @@ spec:
       template:
         spec:
           containers:
-          - name: Hello
+          - name: third
             image: busybox
             command:
               - /bin/sh
