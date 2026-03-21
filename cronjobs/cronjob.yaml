@@ -62,7 +62,7 @@ metadata:
   name: cronjob-third
   namespace: cron-jobs
 spec:
-  schedule: "*/2 * * * *"
+  schedule: "*/1 * * * *"
   jobTemplate:
     spec:
       concurrencyPolicy: Forbid # Skip new job if previous still running
