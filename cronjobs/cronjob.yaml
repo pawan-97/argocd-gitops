@@ -65,6 +65,11 @@ spec:
   schedule: "*/2 * * * *"
   jobTemplate:
     spec:
+      concurrencyPolicy: Forbid # Skip new job if previous still running
+      # Options:
+      # - Allow: Multiple Jobs can run simultaneously [ Default ]
+      # - Forbid: Skip new Job if previous still running
+      # - Replace: Cancel running Job, start new one
       successfulJobsHistoryLimit: 1
       failedJobsHistoryLimit: 1
       activeDeadlineSeconds: 60
