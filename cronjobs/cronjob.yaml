@@ -60,6 +60,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: cronjob-third
+  namespace: cron-jobs
 spec:
   schedule: "*/2 * * * *"
   jobTemplate:
