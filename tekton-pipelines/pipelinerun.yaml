@@ -85,10 +85,3 @@ spec:
     podTemplate:
       securityContext:
         runAsNonRoot: false    # Kaniko requires root
-      resources:
-        limits:
-          cpu: "2"
-          memory: "2Gi"
-        requests:
-          cpu: "500m"
-          memory: "512Mi"

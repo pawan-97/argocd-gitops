@@ -48,8 +48,7 @@ spec:
       args:
         - --dockerfile=$(workspaces.source.path)/$(params.dockerfile-path)
         - --context=$(workspaces.source.path)/$(params.context-path)
-        - --destination=$(params.image):$(params.tag)
-        - --destination=$(params.image):$(tasks.checkout.results.commit)  # also tag with git SHA
+        - --destination=$(params.image):$(params.tag)  # tag with git SHA passed from pipeline
         - --digest-file=$(results.image-digest.path)
         - --cache=true
         - --cache-ttl=24h
