@@ -54,3 +54,25 @@
 #                 cpu: "100m"
 #                 memory: "128Mi"
 #           restartPolicy: OnFailure
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cronjob-third
+spec:
+  schedule: "*/2 * * * *"
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 60
+      backoffLimit: 2
+      template:
+        spec:
+          containers:
+          - name: Hello
+            image: busybox
+            command:
+              - /bin/sh
+              - -c
+              - date; echo "Hello from GitOps CronJob"
+          restartPolicy: OnFailure
