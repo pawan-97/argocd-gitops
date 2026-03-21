@@ -80,11 +80,11 @@ spec:
         spec:
           containers:
           - name: third
-            image: busybox12353255678696453423121 # failed the job
+            image: busybox
             command:
               - /bin/sh
               - -c
-              - date1234123; echo "Hello from GitOps CronJob"
+              - date; echo "Hello from GitOps CronJob"
             resources:
               requests:
                 cpu: "100m"
