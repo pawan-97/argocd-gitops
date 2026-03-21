@@ -63,19 +63,19 @@ metadata:
   namespace: cron-jobs
 spec:
   schedule: "*/1 * * * *"
+  concurrencyPolicy: Forbid # Skip new job if previous still running
+  # Options:
+  # - Allow: Multiple Jobs can run simultaneously [ Default ]
+  # - Forbid: Skip new Job if previous still running
+  # - Replace: Cancel running Job, start new one
+  successfulJobsHistoryLimit: 1  # Default: 3
+  failedJobsHistoryLimit: 1
+  activeDeadlineSeconds: 60 # Must start within 60 seconds
+  backoffLimit: 2
+  #suspend: true   # No new Jobs will be created
+  timeZone: "America/New_York"    # Run in specific timezone
   jobTemplate:
     spec:
-      concurrencyPolicy: Forbid # Skip new job if previous still running
-      # Options:
-      # - Allow: Multiple Jobs can run simultaneously [ Default ]
-      # - Forbid: Skip new Job if previous still running
-      # - Replace: Cancel running Job, start new one
-      successfulJobsHistoryLimit: 1  # Default: 3
-      failedJobsHistoryLimit: 1
-      activeDeadlineSeconds: 60 # Must start within 60 seconds
-      backoffLimit: 2
-      #suspend: true   # No new Jobs will be created
-      timeZone: "America/New_York"    # Run in specific timezone
       template:
         spec:
           containers:
