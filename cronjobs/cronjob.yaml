@@ -64,6 +64,8 @@ spec:
   schedule: "*/2 * * * *"
   jobTemplate:
     spec:
+      successfulJobsHistoryLimit: 1
+      failedJobsHistoryLimit: 1
       activeDeadlineSeconds: 60
       backoffLimit: 2
       template:
@@ -75,4 +77,8 @@ spec:
               - /bin/sh
               - -c
               - date; echo "Hello from GitOps CronJob"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
           restartPolicy: OnFailure
