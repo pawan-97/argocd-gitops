@@ -72,8 +72,8 @@ spec:
   failedJobsHistoryLimit: 1
   activeDeadlineSeconds: 60 # Must start within 60 seconds
   backoffLimit: 2
-  suspend: true   # No new Jobs will be created
-  timeZone: "America/New_York"    # Run in specific timezone
+  suspend: false   # No new Jobs will be created
+  timeZone: "Asia/Kolkata"    # Run in specific timezone
   jobTemplate:
     spec:
       # ttlSecondsAfterFinished: 86400  # Auto-delete Job after 24h
