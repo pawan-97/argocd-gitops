@@ -95,7 +95,7 @@ metadata:
   name: ordered-cron-demo
   namespace: cron-jobs
 spec:
-  schedule: "*/2 * * * *"
+  schedule: "*/1 * * * *"
   concurrencyPolicy: Forbid
 
   jobTemplate:
