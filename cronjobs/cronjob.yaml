@@ -55,36 +55,86 @@
 #                 memory: "128Mi"
 #           restartPolicy: OnFailure
 
----
+# ---
+# apiVersion: batch/v1
+# kind: CronJob
+# metadata:
+#   name: cronjob-third
+#   namespace: cron-jobs
+# spec:
+#   schedule: "*/2 * * * *"
+#   jobTemplate:
+#     spec:
+#       concurrencyPolicy: Forbid # Skip new job if previous still running
+#       # Options:
+#       # - Allow: Multiple Jobs can run simultaneously [ Default ]
+#       # - Forbid: Skip new Job if previous still running
+#       # - Replace: Cancel running Job, start new one
+#       successfulJobsHistoryLimit: 1
+#       failedJobsHistoryLimit: 1
+#       activeDeadlineSeconds: 60
+#       backoffLimit: 2
+#       template:
+#         spec:
+#           containers:
+#           - name: third
+#             image: busybox
+#             command:
+#               - /bin/sh
+#               - -c
+#               - date; echo "Hello from GitOps CronJob"
+#             resources:
+#               requests:
+#                 cpu: "100m"
+#                 memory: "128Mi"
+#           restartPolicy: OnFailure
+
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: cronjob-third
+  name: ordered-cron-demo
   namespace: cron-jobs
 spec:
   schedule: "*/2 * * * *"
+  concurrencyPolicy: Forbid
+
   jobTemplate:
     spec:
-      concurrencyPolicy: Forbid # Skip new job if previous still running
-      # Options:
-      # - Allow: Multiple Jobs can run simultaneously [ Default ]
-      # - Forbid: Skip new Job if previous still running
-      # - Replace: Cancel running Job, start new one
-      successfulJobsHistoryLimit: 1
-      failedJobsHistoryLimit: 1
-      activeDeadlineSeconds: 60
-      backoffLimit: 2
+      backoffLimit: 1
       template:
         spec:
-          containers:
-          - name: third
-            image: busybox
-            command:
-              - /bin/sh
-              - -c
-              - date; echo "Hello from GitOps CronJob"
-            resources:
-              requests:
-                cpu: "100m"
-                memory: "128Mi"
           restartPolicy: OnFailure
+
+          initContainers:
+            - name: job-a
+              image: busybox
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "===== I AM FIRST JOB (JOB-A) ====="
+                  date
+                  sleep 5
+                  echo "===== FIRST JOB COMPLETED ====="
+
+            - name: job-b
+              image: busybox
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "===== I AM SECOND JOB (JOB-B) ====="
+                  date
+                  sleep 5
+                  echo "===== SECOND JOB COMPLETED ====="
+
+          containers:
+            - name: final
+              image: busybox
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "===== I AM FINAL JOB ====="
+                  date
+                  echo "===== ALL JOBS COMPLETED SUCCESSFULLY ====="
