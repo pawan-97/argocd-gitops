@@ -115,8 +115,17 @@ spec:
                 - |
                   echo "===== I AM FIRST JOB (JOB-A) ====="
                   date
-                  sleep 5
+                  SLEEP_SECONDS="$(awk 'BEGIN { srand(); print int(60 + rand() * 241) }')"
+                  echo "JOB-A will run for ${SLEEP_SECONDS} seconds"
+                  sleep "${SLEEP_SECONDS}"
                   echo "===== FIRST JOB COMPLETED ====="
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "200m"
+                  memory: "256Mi"
 
             - name: job-b
               image: busybox
@@ -126,8 +135,17 @@ spec:
                 - |
                   echo "===== I AM SECOND JOB (JOB-B) ====="
                   date
-                  sleep 5
+                  SLEEP_SECONDS="$(awk 'BEGIN { srand(); print int(60 + rand() * 241) }')"
+                  echo "JOB-B will run for ${SLEEP_SECONDS} seconds"
+                  sleep "${SLEEP_SECONDS}"
                   echo "===== SECOND JOB COMPLETED ====="
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "200m"
+                  memory: "256Mi"
 
           containers:
             - name: final
@@ -138,4 +156,14 @@ spec:
                 - |
                   echo "===== I AM FINAL JOB ====="
                   date
+                  SLEEP_SECONDS="$(awk 'BEGIN { srand(); print int(60 + rand() * 241) }')"
+                  echo "FINAL job will run for ${SLEEP_SECONDS} seconds"
+                  sleep "${SLEEP_SECONDS}"
                   echo "===== ALL JOBS COMPLETED SUCCESSFULLY ====="
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "200m"
+                  memory: "256Mi"
